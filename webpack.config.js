@@ -1,30 +1,61 @@
 const path = require('path');
+const webpack = require('webpack');
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
+
+const env = process.env.NODE_ENV;
 
 module.exports = {
-    entry: './src/js/index.js',
+    entry: './src/index.js',
+
+    mode: env,
+
     output: {
         path: path.resolve(__dirname, 'dist'),
-        filename: 'js/bundle.js'
+        filename: '[name].bundle.js',
+        publicPath: '/'
     },
+
     devServer: {
-        contentBase: './dist'
+        contentBase: path.join(__dirname, 'public'),
+        compress: true,
+        port: 3500,
+        hot: true,
     },
-    plugins: [
-        new HtmlWebpackPlugin({
-           filename: 'index.html', // name of html file to be created
-           template: './src/index.html' // source from which html file would be created
-        })
-    ],
+
     module: {
         rules: [
-            {
-                test: /\.js$/, //using regex to tell babel exactly what files to transcompile
-                exclude: /node_modules/, // files to be ignored
-                use: {
-                    loader: 'babel-loader' // specify the loader
-                } 
-            }
+          {
+            test: /\.(js|jsx)$/,
+            exclude: /node_modules/,
+            use: 'babel-loader'
+          },
+          {
+            test: /\.(sa|sc|c)ss$/,
+            use: [
+              env == 'development' ? 'style-loader' : MiniCssExtractPlugin.loader,
+              'css-loader',
+              'postcss-loader',
+              'sass-loader',
+            ]
+          }
         ]
-    }
+      },
+    
+      plugins: [
+        new HtmlWebpackPlugin({template: './src/index.html'}),
+        new webpack.HotModuleReplacementPlugin(),
+        new MiniCssExtractPlugin({
+          filename: "[name].css",
+          chunkFilename: "[id].css"
+        }),
+        new CopyWebpackPlugin([
+          {
+              context: 'node_modules/@webcomponents/webcomponentsjs',
+              from: '**/*.js',
+              to: 'webcomponents'
+          }
+        ])
+      ]
 }
